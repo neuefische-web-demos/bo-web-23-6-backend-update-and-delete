@@ -9,13 +9,35 @@ export default function Joke() {
   const router = useRouter();
   const { id } = router.query;
 
-  const { data, isLoading } = useSWR(`/api/jokes/${id}`);
+  const { data, isLoading, mutate } = useSWR(`/api/jokes/${id}`);
 
-  function handleEdit(event) {
+  async function handleEdit(event) {
     event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const jokeData = Object.fromEntries(formData);
+
+    const response = await fetch(`/api/jokes/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(jokeData),
+    });
+
+    if (response.ok) {
+      mutate();
+    }
   }
 
-  async function handleDelete() {}
+  async function handleDelete() {
+    const response = await fetch(`/api/jokes/${id}`, {
+      method: "DELETE",
+    });
+    if (response.ok) {
+      router.push("/");
+    }
+  }
 
   if (isLoading) {
     return <h1>Loading...</h1>;
@@ -43,9 +65,7 @@ export default function Joke() {
           </span>
         </button>
       </div>
-      {isEditMode && (
-        <JokeForm onSubmit={handleEdit} value={data.joke} isEditMode={true} />
-      )}
+      {isEditMode && <JokeForm onSubmit={handleEdit} value={data.joke} isEditMode={true} />}
       <Link href="/">Back to all</Link>
     </>
   );
